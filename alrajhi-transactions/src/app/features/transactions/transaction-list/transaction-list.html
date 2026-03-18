@@ -1,0 +1,215 @@
+<div class="transactions-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Transactions</h1>
+      <p class="page-subtitle">View and filter your account transactions</p>
+    </div>
+  </div>
+
+  <!-- Account Selector -->
+  <div class="filter-card">
+    <div class="filter-row">
+      <div class="filter-group account-select-group">
+        <label class="filter-label">Account</label>
+        <select class="filter-select" [(ngModel)]="selectedAccountId" (ngModelChange)="onAccountChange()">
+          <option *ngFor="let acc of accounts" [value]="acc.AccountId">
+            {{ getShortAccountLabel(acc) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Transaction Type</label>
+        <select class="filter-select" [(ngModel)]="filterType" (ngModelChange)="applyFilters()">
+          <option *ngFor="let t of transactionTypes" [value]="t.value">{{ t.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Status</label>
+        <select class="filter-select" [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
+          <option value="all">All Statuses</option>
+          <option value="Booked">Booked</option>
+          <option value="Pending">Pending</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">From Date</label>
+        <input type="date" class="filter-input" [(ngModel)]="filterFrom" (ngModelChange)="loadTransactions()">
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">To Date</label>
+        <input type="date" class="filter-input" [(ngModel)]="filterTo" (ngModelChange)="loadTransactions()">
+      </div>
+
+      <button class="reset-btn" (click)="resetFilters()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10"/>
+          <path d="M3.51 15a9 9 0 1 0 .49-3.25"/>
+        </svg>
+        Reset
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="search-row">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search by description, merchant, transaction ID..."
+          [(ngModel)]="searchText"
+          (ngModelChange)="applyFilters()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-row" *ngIf="!loading && filteredTransactions.length > 0">
+    <div class="summary-item total">
+      <span class="summary-label">Showing</span>
+      <span class="summary-value">{{ filteredTransactions.length }} transactions</span>
+    </div>
+    <div class="summary-item credit">
+      <span class="summary-label">Credits</span>
+      <span class="summary-value">+{{ totalCredit.toLocaleString('en-SA', {minimumFractionDigits: 2}) }} SAR</span>
+    </div>
+    <div class="summary-item debit">
+      <span class="summary-label">Debits</span>
+      <span class="summary-value">-{{ totalDebit.toLocaleString('en-SA', {minimumFractionDigits: 2}) }} SAR</span>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading transactions...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="!loading && error" class="error-state">
+    <p>{{ error }}</p>
+  </div>
+
+  <!-- Empty -->
+  <div *ngIf="!loading && !error && filteredTransactions.length === 0" class="empty-state">
+    <div class="empty-icon">📋</div>
+    <p>No transactions found</p>
+    <span>Try adjusting your filters</span>
+  </div>
+
+  <!-- Transaction Table -->
+  <div class="table-container" *ngIf="!loading && filteredTransactions.length > 0">
+    <table class="txn-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th class="text-right">Amount (SAR)</th>
+          <th class="text-right">Balance (SAR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let txn of filteredTransactions">
+          <tr
+            class="txn-row"
+            [class.selected]="selectedTransaction?.TransactionId === txn.TransactionId"
+            (click)="selectTransaction(txn)">
+            <td class="date-cell">
+              <span class="date-main">{{ formatDate(txn.BookingDateTime) }}</span>
+              <span class="date-time" *ngIf="txn.TransactionDateTime">
+                {{ formatDateTime(txn.TransactionDateTime).split(',')[1]?.trim() }}
+              </span>
+            </td>
+            <td class="desc-cell">
+              <div class="desc-wrapper">
+                <span class="txn-icon-cell">{{ getTransactionIcon(txn.TransactionType) }}</span>
+                <div class="desc-text">
+                  <span class="desc-main">{{ txn.TransactionInformation || getTypeLabel(txn.TransactionType) }}</span>
+                  <span class="desc-sub" *ngIf="txn.MerchantDetails?.MerchantName">{{ txn.MerchantDetails?.MerchantName }}</span>
+                  <span class="desc-sub" *ngIf="!txn.MerchantDetails?.MerchantName && txn.TransactionReference">
+                    Ref: {{ txn.TransactionReference | slice:0:20 }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="type-badge">{{ getTypeLabel(txn.TransactionType) }}</span>
+            </td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(txn.Status)">
+                {{ txn.Status.replace('KSAOB.', '') }}
+              </span>
+            </td>
+            <td class="amount-cell text-right" [class.credit]="txn.CreditDebitIndicator === 'KSAOB.Credit'" [class.debit]="txn.CreditDebitIndicator === 'KSAOB.Debit'">
+              <span class="amount-sign">{{ txn.CreditDebitIndicator === 'KSAOB.Credit' ? '+' : '-' }}</span>
+              {{ formatAmount(txn.Amount.Amount) }}
+            </td>
+            <td class="balance-cell text-right">
+              {{ txn.Balance ? formatAmount(txn.Balance.Amount.Amount) : '—' }}
+            </td>
+          </tr>
+
+          <!-- Expanded Detail Row -->
+          <tr *ngIf="selectedTransaction?.TransactionId === txn.TransactionId" class="detail-row">
+            <td colspan="6">
+              <div class="detail-panel">
+                <div class="detail-grid">
+                  <div class="detail-item" *ngIf="txn.TransactionId">
+                    <span class="detail-label">Transaction ID</span>
+                    <span class="detail-value mono">{{ txn.TransactionId }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="txn.TransactionDateTime">
+                    <span class="detail-label">Transaction Date/Time</span>
+                    <span class="detail-value">{{ formatDateTime(txn.TransactionDateTime) }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="txn.LocalTimeZone">
+                    <span class="detail-label">Time Zone</span>
+                    <span class="detail-value">{{ txn.LocalTimeZone }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Sub-Type</span>
+                    <span class="detail-value">{{ getTypeLabel(txn.SubTransactionType) }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Payment Mode</span>
+                    <span class="detail-value">{{ txn.PaymentModes.replace('KSAOB.', '') }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Mutability</span>
+                    <span class="detail-value">{{ txn.TransactionMutability?.replace('KSAOB.', '') || '—' }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="txn.ChargeAmount">
+                    <span class="detail-label">Charge Amount</span>
+                    <span class="detail-value">{{ formatAmount(txn.ChargeAmount.Amount) }} {{ txn.ChargeAmount.Currency }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="txn.CreditorAgent">
+                    <span class="detail-label">Creditor Bank</span>
+                    <span class="detail-value">{{ txn.CreditorAgent.Name || txn.CreditorAgent.Identification || '—' }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="txn.MerchantDetails?.MerchantName">
+                    <span class="detail-label">Merchant</span>
+                    <span class="detail-value">{{ txn.MerchantDetails?.MerchantName }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="txn.MerchantDetails?.MerchantCategoryCode">
+                    <span class="detail-label">Merchant Category Code</span>
+                    <span class="detail-value mono">{{ txn.MerchantDetails?.MerchantCategoryCode }}</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,117 @@
+<div class="settings-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">API Settings</h1>
+      <p class="page-subtitle">Configure your AlRajhi Open Banking API credentials</p>
+    </div>
+  </div>
+
+  <!-- Demo Notice -->
+  <div class="notice-card demo-notice" *ngIf="!config.accessToken">
+    <div class="notice-icon">🔍</div>
+    <div class="notice-content">
+      <strong>Demo Mode Active</strong>
+      <p>The application is currently running with mock/sample data. To connect to the real AlRajhi Open Banking API, enter your credentials below. You can obtain API access at
+        <a href="https://developer.alrajhibank.com.sa" target="_blank" rel="noopener">developer.alrajhibank.com.sa</a>.</p>
+    </div>
+  </div>
+
+  <div class="notice-card success-notice" *ngIf="config.accessToken">
+    <div class="notice-icon">✅</div>
+    <div class="notice-content">
+      <strong>API Connected</strong>
+      <p>Your credentials are configured. The application will use the {{ config.sandboxMode ? 'Sandbox' : 'Production' }} environment.</p>
+    </div>
+  </div>
+
+  <!-- Config Form -->
+  <div class="settings-card">
+    <h2 class="card-title">API Credentials</h2>
+
+    <div class="form-group">
+      <label class="form-label">Environment</label>
+      <div class="toggle-group">
+        <button class="toggle-btn" [class.active]="config.sandboxMode" (click)="config.sandboxMode = true">
+          🧪 Sandbox
+        </button>
+        <button class="toggle-btn" [class.active]="!config.sandboxMode" (click)="config.sandboxMode = false">
+          🚀 Production
+        </button>
+      </div>
+      <p class="form-hint">
+        <span *ngIf="config.sandboxMode">Sandbox URL: <code>https://sit.api.alrajhibank.com.sa/...</code></span>
+        <span *ngIf="!config.sandboxMode">Production URL: <code>https://api.alrajhibank.com.sa/...</code></span>
+      </p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Client ID</label>
+      <input
+        type="text"
+        class="form-input"
+        [(ngModel)]="config.clientId"
+        placeholder="Enter your Client ID (e.g. 2c2053cae8982bca8c09c457df314baf)">
+      <p class="form-hint">Obtained from AlRajhi Developer Portal after registering your application.</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Access Token</label>
+      <textarea
+        class="form-textarea"
+        [(ngModel)]="config.accessToken"
+        placeholder="Paste your Bearer access token here (JWT)..."
+        rows="4">
+      </textarea>
+      <p class="form-hint">Generated via OAuth 2.0 flow using the <code>/token</code> endpoint. This is the Bearer token used in API requests.</p>
+    </div>
+
+    <div class="form-actions">
+      <button class="save-btn" (click)="save()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        Save Configuration
+      </button>
+      <button class="clear-btn" (click)="clearConfig()">Clear & Use Demo Mode</button>
+    </div>
+
+    <div class="saved-notice" *ngIf="saved">
+      ✅ Configuration saved successfully!
+    </div>
+  </div>
+
+  <!-- API Reference -->
+  <div class="settings-card">
+    <h2 class="card-title">API Reference</h2>
+    <div class="api-ref-grid">
+      <div class="api-ref-item">
+        <span class="method get">GET</span>
+        <code>/accounts</code>
+        <span class="api-desc">Get all accounts</span>
+      </div>
+      <div class="api-ref-item">
+        <span class="method get">GET</span>
+        <code>/accounts/&#123;AccountId&#125;/balances</code>
+        <span class="api-desc">Get account balances</span>
+      </div>
+      <div class="api-ref-item">
+        <span class="method get">GET</span>
+        <code>/accounts/&#123;AccountId&#125;/transactions</code>
+        <span class="api-desc">Get transactions</span>
+      </div>
+      <div class="api-ref-item">
+        <span class="method post">POST</span>
+        <code>/account-access-consents</code>
+        <span class="api-desc">Create account consent</span>
+      </div>
+    </div>
+    <p class="api-ref-link">
+      Full API documentation:
+      <a href="https://developer.alrajhibank.com.sa/open-banking/APIGuides" target="_blank" rel="noopener">
+        developer.alrajhibank.com.sa/open-banking/APIGuides
+      </a>
+    </p>
+  </div>
+</div>

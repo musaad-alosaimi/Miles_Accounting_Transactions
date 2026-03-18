@@ -1,0 +1,129 @@
+<div class="dashboard">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-subtitle">Overview of your AlRajhi Bank accounts</p>
+    </div>
+    <button class="refresh-btn" (click)="loadAccounts()" [disabled]="loading">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [class.spinning]="loading">
+        <polyline points="1 4 1 10 7 10"/>
+        <path d="M3.51 15a9 9 0 1 0 .49-3.25"/>
+      </svg>
+      Refresh
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading account data...</p>
+  </div>
+
+  <div *ngIf="!loading && error" class="error-state">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error">
+    <!-- Account Selector -->
+    <div class="account-tabs" *ngIf="accounts.length > 1">
+      <button
+        *ngFor="let account of accounts"
+        class="account-tab"
+        [class.active]="selectedAccount?.AccountId === account.AccountId"
+        (click)="selectAccount(account)">
+        {{ account.AccountSubType || 'Account' }} —
+        {{ account.AccountType?.replace('KSAOB.', '') }}
+      </button>
+    </div>
+
+    <!-- Account Card -->
+    <div class="account-card" *ngIf="selectedAccount">
+      <div class="card-header">
+        <div class="account-type-badge">
+          {{ selectedAccount.AccountType?.replace('KSAOB.', '') }} •
+          {{ selectedAccount.AccountSubType }}
+        </div>
+        <div class="account-status" [class.active]="selectedAccount.Status === 'Active'">
+          <span class="dot"></span>
+          {{ selectedAccount.Status }}
+        </div>
+      </div>
+      <div class="account-holder">{{ selectedAccount.AccountHolderName }}</div>
+      <div class="account-iban">{{ getMaskedIban(selectedAccount) }}</div>
+      <div class="balance-grid">
+        <div class="balance-item">
+          <span class="balance-label">Available Balance</span>
+          <span class="balance-amount">{{ getAvailableBalance() }} <span class="currency">SAR</span></span>
+        </div>
+        <div class="balance-item">
+          <span class="balance-label">Booked Balance</span>
+          <span class="balance-amount">{{ getBookedBalance() }} <span class="currency">SAR</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card credit">
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="19" x2="12" y2="5"/>
+            <polyline points="5 12 12 5 19 12"/>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Credited</span>
+          <span class="stat-value">{{ totalCredit.toLocaleString('en-SA', {minimumFractionDigits: 2}) }} SAR</span>
+        </div>
+      </div>
+      <div class="stat-card debit">
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <polyline points="19 12 12 19 5 12"/>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Total Debited</span>
+          <span class="stat-value">{{ totalDebit.toLocaleString('en-SA', {minimumFractionDigits: 2}) }} SAR</span>
+        </div>
+      </div>
+      <div class="stat-card transactions">
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <polyline points="8 7 3 12 8 17"/>
+            <polyline points="16 7 21 12 16 17"/>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-label">Recent Transactions</span>
+          <span class="stat-value">{{ recentTransactions.length }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="recent-section">
+      <div class="section-header">
+        <h2 class="section-title">Recent Transactions</h2>
+        <button class="view-all-btn" (click)="viewAllTransactions()">View All →</button>
+      </div>
+      <div class="transaction-list">
+        <div *ngFor="let txn of recentTransactions" class="txn-row">
+          <div class="txn-icon">{{ getTransactionIcon(txn.TransactionType) }}</div>
+          <div class="txn-info">
+            <span class="txn-info-text">{{ txn.TransactionInformation || getTransactionLabel(txn.TransactionType) }}</span>
+            <span class="txn-date">{{ formatDate(txn.BookingDateTime) }}</span>
+          </div>
+          <div class="txn-amount" [class.credit]="txn.CreditDebitIndicator === 'KSAOB.Credit'" [class.debit]="txn.CreditDebitIndicator === 'KSAOB.Debit'">
+            <span class="sign">{{ txn.CreditDebitIndicator === 'KSAOB.Credit' ? '+' : '-' }}</span>
+            {{ formatAmount(txn.Amount.Amount) }} SAR
+          </div>
+          <div class="txn-status" [class]="'status-' + txn.Status.replace('KSAOB.', '').toLowerCase()">
+            {{ txn.Status.replace('KSAOB.', '') }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
