@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/app.scss"],
+  "sourcesContent": [".app-layout {\n  display: flex;\n  min-height: 100vh;\n  background: #f0f2f5;\n}\n\n.main-content {\n  flex: 1;\n  margin-left: 260px;\n  padding: 32px;\n  overflow-y: auto;\n\n  @media (max-width: 768px) {\n    margin-left: 0;\n    padding: 16px;\n  }\n}\n"],
+  "mappings": ";AAAA,CAAA;AACE,WAAA;AACA,cAAA;AACA,cAAA;;AAGF,CAAA;AACE,QAAA;AACA,eAAA;AACA,WAAA;AACA,cAAA;;AAEA,OAAA,CAAA,SAAA,EAAA;AANF,GAAA;AAOI,iBAAA;AACA,aAAA;;;",
+  "names": []
+}
